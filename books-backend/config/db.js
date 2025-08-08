@@ -1,7 +1,7 @@
 // config/db.js
 import { Sequelize } from "sequelize";
 
-const sequelize = new Sequelize("", "postgres", "", {
+const sequelize = new Sequelize("BookRedux", "postgres", "noah", {
   host: "localhost",
   dialect: "postgres",
   logging: false,

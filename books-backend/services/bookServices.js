@@ -1,4 +1,4 @@
-// services/bookService.js
+
 import Book from "../models/book.js";
 
 const getAllBooks = async () => {

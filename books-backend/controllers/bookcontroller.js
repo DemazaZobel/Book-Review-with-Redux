@@ -1,11 +1,10 @@
-// controllers/bookController.js
 import {
     getAllBooks,
     createBook,
     getBookById,
     updateBookById,
     deleteBookById,
-  } from "../services/bookService.js";
+  } from "../services/bookServices.js";
   
   export const getBooks = async (req, res) => {
     try {

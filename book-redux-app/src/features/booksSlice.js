@@ -1,49 +1,34 @@
-// src/redux/booksSlice.js
 import { createSlice } from '@reduxjs/toolkit';
+import API from '../services/api'; // Axios instance
 
-const API_BASE_URL = 'http://localhost:5000/api/books';
-
-// API calls
+// API Calls using Axios
 const fetchBooksAPI = async () => {
-  const res = await fetch(API_BASE_URL);
-  if (!res.ok) throw new Error('Failed to fetch books');
-  return await res.json();
+  const res = await API.get('/');
+  return res.data;
 };
 
 const addBookAPI = async (book) => {
-  const res = await fetch(API_BASE_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(book),
-  });
-  if (!res.ok) throw new Error('Failed to add book');
-  return await res.json();
+  const res = await API.post('/', book);
+  return res.data;
 };
 
 const updateBookAPI = async (book) => {
-  const res = await fetch(`${API_BASE_URL}/${book.id}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(book),
-  });
-  if (!res.ok) throw new Error('Failed to update book');
-  return await res.json();
+  const res = await API.put(`/${book.id}`, book);
+  return res.data;
 };
 
 const deleteBookAPI = async (id) => {
-  const res = await fetch(`${API_BASE_URL}/${id}`, {
-    method: 'DELETE',
-  });
-  if (!res.ok) throw new Error('Failed to delete book');
+  await API.delete(`/${id}`);
 };
 
+// Thunks
 export const fetchBooks = () => async (dispatch) => {
   dispatch(fetchBooksStart());
   try {
     const books = await fetchBooksAPI();
     dispatch(fetchBooksSuccess(books));
   } catch (error) {
-    dispatch(fetchBooksFailure(error.message));
+    dispatch(fetchBooksFailure(error.response?.data?.message || error.message));
   }
 };
 
@@ -53,7 +38,7 @@ export const addBookAsync = (book) => async (dispatch) => {
     const newBook = await addBookAPI(book);
     dispatch(addBookSuccess(newBook));
   } catch (error) {
-    dispatch(addBookFailure(error.message));
+    dispatch(addBookFailure(error.response?.data?.message || error.message));
   }
 };
 
@@ -63,7 +48,7 @@ export const updateBookAsync = (book) => async (dispatch) => {
     const updatedBook = await updateBookAPI(book);
     dispatch(updateBookSuccess(updatedBook));
   } catch (error) {
-    dispatch(updateBookFailure(error.message));
+    dispatch(updateBookFailure(error.response?.data?.message || error.message));
   }
 };
 
@@ -73,10 +58,21 @@ export const deleteBookAsync = (id) => async (dispatch) => {
     await deleteBookAPI(id);
     dispatch(deleteBookSuccess(id));
   } catch (error) {
-    dispatch(deleteBookFailure(error.message));
+    dispatch(deleteBookFailure(error.response?.data?.message || error.message));
   }
 };
 
+export const toggleReadAsync = (book) => async (dispatch) => {
+  dispatch(updateBookStart());
+  try {
+    const updatedBook = await updateBookAPI({ ...book, read: !book.read });
+    dispatch(updateBookSuccess(updatedBook));
+  } catch (error) {
+    dispatch(updateBookFailure(error.response?.data?.message || error.message));
+  }
+};
+
+// Redux Slice
 const booksSlice = createSlice({
   name: 'books',
   initialState: {
@@ -94,6 +90,7 @@ const booksSlice = createSlice({
     deleteError: null,
   },
   reducers: {
+    // Fetch
     fetchBooksStart: (state) => {
       state.loading = true;
       state.error = null;
@@ -107,6 +104,7 @@ const booksSlice = createSlice({
       state.error = action.payload;
     },
 
+    // Add
     addBookStart: (state) => {
       state.addLoading = true;
       state.addError = null;
@@ -120,6 +118,7 @@ const booksSlice = createSlice({
       state.addError = action.payload;
     },
 
+    // Update
     updateBookStart: (state) => {
       state.updateLoading = true;
       state.updateError = null;
@@ -127,13 +126,16 @@ const booksSlice = createSlice({
     updateBookSuccess: (state, action) => {
       state.updateLoading = false;
       const index = state.items.findIndex(book => book.id === action.payload.id);
-      if (index !== -1) state.items[index] = action.payload;
+      if (index !== -1) {
+        state.items[index] = action.payload;
+      }
     },
     updateBookFailure: (state, action) => {
       state.updateLoading = false;
       state.updateError = action.payload;
     },
 
+    // Delete
     deleteBookStart: (state) => {
       state.deleteLoading = true;
       state.deleteError = null;
@@ -149,6 +151,7 @@ const booksSlice = createSlice({
   },
 });
 
+// Actions
 export const {
   fetchBooksStart,
   fetchBooksSuccess,
@@ -161,6 +164,7 @@ export const {
   updateBookStart,
   updateBookSuccess,
   updateBookFailure,
+  
 
   deleteBookStart,
   deleteBookSuccess,
